@@ -1,0 +1,17 @@
+D:\transfer\cs-osm-import\Mapper\obj\Debug\Mapper.csprojResolveAssemblyReference.cache
+D:\CitiesSkylines\cs-osm-import\Mapper\bin\Debug\Mapper.dll
+D:\CitiesSkylines\cs-osm-import\Mapper\bin\Debug\Mapper.pdb
+D:\CitiesSkylines\cs-osm-import\Mapper\bin\Debug\Assembly-CSharp-firstpass.dll
+D:\CitiesSkylines\cs-osm-import\Mapper\bin\Debug\Assembly-CSharp.dll
+D:\CitiesSkylines\cs-osm-import\Mapper\bin\Debug\ColossalManaged.dll
+D:\CitiesSkylines\cs-osm-import\Mapper\bin\Debug\ICities.dll
+D:\CitiesSkylines\cs-osm-import\Mapper\bin\Debug\ICSharpCode.SharpZipLib.dll
+D:\CitiesSkylines\cs-osm-import\Mapper\bin\Debug\Mono.Security.dll
+D:\CitiesSkylines\cs-osm-import\Mapper\bin\Debug\UnityEngine.dll
+D:\CitiesSkylines\cs-osm-import\Mapper\bin\Debug\UnityEngine.Networking.dll
+D:\CitiesSkylines\cs-osm-import\Mapper\bin\Debug\UnityEngine.UI.dll
+D:\CitiesSkylines\cs-osm-import\Mapper\bin\Debug\PopsApiWrapper.dll
+D:\CitiesSkylines\cs-osm-import\Mapper\obj\Debug\Mapper.csproj.CoreCompileInputs.cache
+D:\CitiesSkylines\cs-osm-import\Mapper\obj\Debug\Mapper.csproj.CopyComplete
+D:\CitiesSkylines\cs-osm-import\Mapper\obj\Debug\Mapper.dll
+D:\CitiesSkylines\cs-osm-import\Mapper\obj\Debug\Mapper.pdb

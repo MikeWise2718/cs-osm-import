@@ -1,0 +1,17 @@
+D:\transfer\cs-osm-import\MapperTests\obj\Debug\MapperTests.csprojResolveAssemblyReference.cache
+D:\CitiesSkylines\cs-osm-import\MapperTests\bin\Debug\MapperTests.exe
+D:\CitiesSkylines\cs-osm-import\MapperTests\bin\Debug\MapperTests.pdb
+D:\CitiesSkylines\cs-osm-import\MapperTests\bin\Debug\Mapper.dll
+D:\CitiesSkylines\cs-osm-import\MapperTests\bin\Debug\ICities.dll
+D:\CitiesSkylines\cs-osm-import\MapperTests\bin\Debug\UnityEngine.dll
+D:\CitiesSkylines\cs-osm-import\MapperTests\bin\Debug\ColossalManaged.dll
+D:\CitiesSkylines\cs-osm-import\MapperTests\bin\Debug\Assembly-CSharp.dll
+D:\CitiesSkylines\cs-osm-import\MapperTests\bin\Debug\ICSharpCode.SharpZipLib.dll
+D:\CitiesSkylines\cs-osm-import\MapperTests\bin\Debug\PopsApiWrapper.dll
+D:\CitiesSkylines\cs-osm-import\MapperTests\bin\Debug\Assembly-CSharp-firstpass.dll
+D:\CitiesSkylines\cs-osm-import\MapperTests\bin\Debug\Mapper.pdb
+D:\CitiesSkylines\cs-osm-import\MapperTests\obj\Debug\MapperTests.csprojAssemblyReference.cache
+D:\CitiesSkylines\cs-osm-import\MapperTests\obj\Debug\MapperTests.csproj.CoreCompileInputs.cache
+D:\CitiesSkylines\cs-osm-import\MapperTests\obj\Debug\MapperTests.csproj.CopyComplete
+D:\CitiesSkylines\cs-osm-import\MapperTests\obj\Debug\MapperTests.exe
+D:\CitiesSkylines\cs-osm-import\MapperTests\obj\Debug\MapperTests.pdb
