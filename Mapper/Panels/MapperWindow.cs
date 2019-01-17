@@ -294,7 +294,6 @@ namespace Mapper
 
                 }
                 m_LastHeightmap16 = image.GetPixels();
-                image.
                 Debug.Log("5-image.w" + image.width + " h:" + image.height);
                 //infoLabel.text = "w:" + image.width + " h:" + image.height;
                 //m_LastHeightmap16 = image.GetPixels();
@@ -355,7 +354,16 @@ namespace Mapper
         private void NodesWebClientCallback(object sender, DownloadDataCompletedEventArgs e)
         {
             nodesXml = e.Result;
-            errorLabel.text = string.Format("{0} Data Loaded.", "Node");
+            var msg = "Node Data Loaded";
+            if (nodesXml!=null)
+            {
+                msg += " len:"+nodesXml.Length;
+            }
+            else
+            {
+                msg += " but nodesXml is null";
+            }
+            errorLabel.text = msg;
 			nodesLoaded = true;
 			if (nodesLoaded && waysLoaded) { 
 				okButton.Enable();
@@ -365,7 +373,7 @@ namespace Mapper
         private void WaysWebClientCallback(object sender, DownloadDataCompletedEventArgs e)
         {
             waysXml = e.Result;
-            errorLabel.text = string.Format("{0} Data Loaded.", "Ways");
+            //errorLabel.text = string.Format("{0} Data Loaded.", "Ways");
 			waysLoaded = true;
 			if (nodesLoaded && waysLoaded)
 			{

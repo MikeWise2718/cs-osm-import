@@ -15,3 +15,4 @@ D:\CitiesSkylines\cs-osm-import\Mapper\obj\Debug\Mapper.csproj.CoreCompileInputs
 D:\CitiesSkylines\cs-osm-import\Mapper\obj\Debug\Mapper.csproj.CopyComplete
 D:\CitiesSkylines\cs-osm-import\Mapper\obj\Debug\Mapper.dll
 D:\CitiesSkylines\cs-osm-import\Mapper\obj\Debug\Mapper.pdb
+D:\CitiesSkylines\cs-osm-import\Mapper\obj\Debug\Mapper.csprojAssemblyReference.cache
