@@ -47,6 +47,7 @@ namespace Mapper
         UILabel tilesLabel;
 
         UILabel errorLabel;
+        UILabel infoLabel;
 
         UIButton okButton;
 
@@ -110,7 +111,12 @@ namespace Mapper
             mapquestKey = AddUIComponent<UITextField>();
             mapquestKeyLabel = AddUIComponent<UILabel>();
 
+
+            infoLabel = AddUIComponent<UILabel>();
+
             errorLabel = AddUIComponent<UILabel>();
+
+
 
             okButton = AddUIComponent<UIButton>();
 
@@ -130,7 +136,7 @@ namespace Mapper
 
         public void SetupControls()
         {
-            title.text = "Mike's OSM Import";
+            title.text = "Mike's OSM Import 1";
             title.relativePosition = new Vector3(15, 15);
             title.textScale = 0.9f;
             title.size = new Vector2(200, 30);
@@ -180,7 +186,7 @@ namespace Mapper
 
             SetLabel(coordinatesLabel, "Bounding Box", x, y);
             //SetTextBox(coordinates, "35.949310,34.522050,35.753054,34.360353", x + 120, y);
-            SetTextBox(coordinates, "35.949310,34.522050,35.753054,34.360353", x + 120, y);
+            SetTextBox(coordinates, "-122.2574,47.5688,-122.0170,47.7305", x + 120, y);
             y += vertPadding - 5;
 
             SetButton(loadTerrainParty, "Load From terrain.party", y);
@@ -192,6 +198,10 @@ namespace Mapper
             loadAPIButton.tooltip = "Load road map data from OpenStreetMap";
             loadAPIButton.eventClick += loadAPIButton_eventClick;
             y += vertPadding + 5;
+
+            SetLabel(infoLabel, "InfoLabel", x, y);
+            infoLabel.textScale = 0.6f;
+            y += vertPadding + 12;
 
             SetLabel(errorLabel, "No OSM data loaded.", x, y);
             errorLabel.textScale = 0.6f;
@@ -234,8 +244,21 @@ namespace Mapper
 
         private IEnumerator LoadHeightMap16(byte[] heightmap)
         {
-            Singleton<TerrainManager>.instance.SetHeightMap16(heightmap);
-            errorLabel.text = "Terrain Loaded";
+            bool ok = false;
+            try
+            {
+                infoLabel.text = "bytes:" + heightmap.Length;
+                Singleton<TerrainManager>.instance.SetHeightMap16(heightmap);
+                ok = true;
+            }
+            catch (Exception ex)
+            {
+                errorLabel.text = ex.ToString();
+            }
+            if (ok)
+            {
+                errorLabel.text = "Terrain Loaded";
+            }
             yield return null;
         }
 
@@ -244,11 +267,14 @@ namespace Mapper
             try
             {
                 var image = new Image(e.Result);
+                Debug.Log("1-image.w" + image.width + " h:" + image.height);
                 image.Convert(Image.kFormatAlpha16);
+                Debug.Log("2-image.w" + image.width + " h:" + image.height);
                 if (image.width != 1081 || image.height != 1081)
                 {
                     if (!image.Resize(1081, 1081))
                     {
+                        Debug.Log("3-image.w" + image.width + " h:" + image.height);
                         errorLabel.text = string.Concat(new object[]
                         {
                             "Resize not supported: ",
@@ -264,9 +290,18 @@ namespace Mapper
                         });
                         return;
                     }
+                    Debug.Log("4-image.w" + image.width + " h:" + image.height);
+
                 }
                 m_LastHeightmap16 = image.GetPixels();
-                SimulationManager.instance.AddAction(LoadHeightMap16(m_LastHeightmap16));
+                image.
+                Debug.Log("5-image.w" + image.width + " h:" + image.height);
+                //infoLabel.text = "w:" + image.width + " h:" + image.height;
+                //m_LastHeightmap16 = image.GetPixels();
+                Debug.Log("6-lhm15bytes:" +m_LastHeightmap16.Length);
+                Singleton<TerrainManager>.instance.SetHeightMap16(m_LastHeightmap16);
+                Debug.Log("7-done");
+                //SimulationManager.instance.AddAction(LoadHeightMap16(m_LastHeightmap16));
             }
             catch (Exception ex)
             {
