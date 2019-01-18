@@ -9,6 +9,8 @@ using ColossalFramework.Importers;
 using System.Collections;
 using Mapper.OSM;
 using ColossalFramework.Plugins;
+using System.Security.Cryptography.X509Certificates;
+using System.Net.Security;
 
 namespace Mapper
 {
@@ -18,7 +20,7 @@ namespace Mapper
 
         UITextField pathTextBox;
         UILabel pathTextBoxLabel;
-        UIButton loadMapButton;
+        UIButton loadOsmFromFile;
 
         UITextField coordinates;
         UILabel coordinatesLabel;
@@ -48,8 +50,13 @@ namespace Mapper
 
         UILabel errorLabel;
         UILabel infoLabel;
+        UILabel nodesXmlInfoLabel;
+        UILabel waysXmlInfoLabel;
+        UILabel roadMakerInfoLabel;
+        UILabel osmInfoLabel;
+        UILabel lastHeightMap16InfoLabel;
 
-        UIButton okButton;
+        UIButton makeRoadsButton;
 
         private UITextField mapquestKey;
         private UILabel mapquestKeyLabel;
@@ -70,6 +77,7 @@ namespace Mapper
         bool highways = true;
         private byte[] m_LastHeightmap16;
 
+        // Controls created
         public override void Awake()
         {
             this.isInteractive = true;
@@ -86,7 +94,7 @@ namespace Mapper
 
             pathTextBox = AddUIComponent<UITextField>();
             pathTextBoxLabel = AddUIComponent<UILabel>();
-            loadMapButton = AddUIComponent<UIButton>();
+            loadOsmFromFile = AddUIComponent<UIButton>();
 
             pedestriansCheck = AddUIComponent<UIButton>();
             pedestrianLabel = AddUIComponent<UILabel>();
@@ -113,16 +121,20 @@ namespace Mapper
 
 
             infoLabel = AddUIComponent<UILabel>();
+            nodesXmlInfoLabel = AddUIComponent<UILabel>();
+            waysXmlInfoLabel = AddUIComponent<UILabel>();
+            roadMakerInfoLabel = AddUIComponent<UILabel>();
+            osmInfoLabel = AddUIComponent<UILabel>();
+            lastHeightMap16InfoLabel = AddUIComponent<UILabel>();
 
             errorLabel = AddUIComponent<UILabel>();
 
-
-
-            okButton = AddUIComponent<UIButton>();
+            makeRoadsButton = AddUIComponent<UIButton>();
 
             base.Awake();
         }
 
+        // Controls iniitialized
         public override void Start()
         {
             base.Start();
@@ -134,6 +146,7 @@ namespace Mapper
             SetupControls();
         }
 
+        // Called by start
         public void SetupControls()
         {
             title.text = "Mike's OSM Import 1";
@@ -178,15 +191,16 @@ namespace Mapper
 
             SetLabel(pathTextBoxLabel, "Path", x, y);
             SetTextBox(pathTextBox,
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "map"), x + 120, y);
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "osmmaps\\map.osm"), x + 120, y);
             y += vertPadding - 5;
-            SetButton(loadMapButton, "Load OSM From File", y);
-            loadMapButton.eventClick += loadMapButton_eventClick;
+            SetButton(loadOsmFromFile, "Load OSM From File", y);
+            loadOsmFromFile.eventClick += loadOsmFromFileButton_eventClick;
             y += vertPadding + 5;
 
             SetLabel(coordinatesLabel, "Bounding Box", x, y);
             //SetTextBox(coordinates, "35.949310,34.522050,35.753054,34.360353", x + 120, y);
-            SetTextBox(coordinates, "-122.2574,47.5688,-122.0170,47.7305", x + 120, y);
+            //SetTextBox(coordinates, "-122.2574,47.5688,-122.0170,47.7305", x + 120, y);
+            SetTextBox(coordinates, "-122.1436,47.6317,-122.1208,47.6463", x + 120, y);
             y += vertPadding - 5;
 
             SetButton(loadTerrainParty, "Load From terrain.party", y);
@@ -201,19 +215,44 @@ namespace Mapper
 
             SetLabel(infoLabel, "InfoLabel", x, y);
             infoLabel.textScale = 0.6f;
-            y += vertPadding + 12;
+            y += vertPadding/2 + 2;
 
-            SetLabel(errorLabel, "No OSM data loaded.", x, y);
+            SetLabel(lastHeightMap16InfoLabel, "lastHeightMap16InfoLabel", x, y);
+            lastHeightMap16InfoLabel.textScale = 0.6f;
+            y += vertPadding/2 + 2;
+
+            SetLabel(nodesXmlInfoLabel, "nodesXmlInfoLabel", x, y);
+            nodesXmlInfoLabel.textScale = 0.6f;
+            y += vertPadding/2 + 2;
+
+            SetLabel(waysXmlInfoLabel, "waysXmlInfoLabel", x, y);
+            waysXmlInfoLabel.textScale = 0.6f;
+            y += vertPadding/2 + 2;
+
+            SetLabel(roadMakerInfoLabel, "roadmakerInfoLabel", x, y);
+            roadMakerInfoLabel.textScale = 0.6f;
+            y += vertPadding/2 + 2;
+
+            SetLabel(osmInfoLabel, "osmInfoLabel", x, y);
+            osmInfoLabel.textScale = 0.6f;
+            y += vertPadding/2 + 2;
+
+
+
+            SetLabel(errorLabel, "No Error", x, y);
             errorLabel.textScale = 0.6f;
             y += vertPadding + 12;
 
-            SetButton(okButton, "Make Roads", y);
-            okButton.eventClick += okButton_eventClick;
-            okButton.Disable();
+            SetButton(makeRoadsButton, "Make Roads", y);
+            makeRoadsButton.eventClick += makeRoadsButton_eventClick;
+            makeRoadsButton.Disable();
 
             height = y + vertPadding;
         }
 
+        // Called when TarrainParty button is pressed 
+        //  - starts downloading async if request okay
+        //  - calls client_DownloadDataCompleted on completion
         private void loadTerrainParty_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
             try
@@ -238,10 +277,11 @@ namespace Mapper
             }
             catch (Exception ex)
             {
-                errorLabel.text = ex.ToString();
+                //errorLabel.text = ex.ToString();
             }
         }
 
+        // LoadsHeightMap into C:S - called by client_DownloadDataCompleted
         private IEnumerator LoadHeightMap16(byte[] heightmap)
         {
             bool ok = false;
@@ -262,19 +302,20 @@ namespace Mapper
             yield return null;
         }
 
+        // Checks status of hight mad and calls LoadHeightMap16
         private void client_DownloadDataCompleted(object sender, DownloadDataCompletedEventArgs e)
         {
             try
             {
                 var image = new Image(e.Result);
-                Debug.Log("1-image.w" + image.width + " h:" + image.height);
+                //Debug.Log("1-image.w" + image.width + " h:" + image.height);
                 image.Convert(Image.kFormatAlpha16);
-                Debug.Log("2-image.w" + image.width + " h:" + image.height);
+                //Debug.Log("2-image.w" + image.width + " h:" + image.height);
                 if (image.width != 1081 || image.height != 1081)
                 {
                     if (!image.Resize(1081, 1081))
                     {
-                        Debug.Log("3-image.w" + image.width + " h:" + image.height);
+                        //Debug.Log("3-image.w" + image.width + " h:" + image.height);
                         errorLabel.text = string.Concat(new object[]
                         {
                             "Resize not supported: ",
@@ -290,58 +331,91 @@ namespace Mapper
                         });
                         return;
                     }
-                    Debug.Log("4-image.w" + image.width + " h:" + image.height);
+                    //Debug.Log("4-image.w" + image.width + " h:" + image.height);
 
                 }
                 m_LastHeightmap16 = image.GetPixels();
-                Debug.Log("5-image.w" + image.width + " h:" + image.height);
+                //Debug.Log("5-image.w" + image.width + " h:" + image.height);
                 //infoLabel.text = "w:" + image.width + " h:" + image.height;
                 //m_LastHeightmap16 = image.GetPixels();
-                Debug.Log("6-lhm15bytes:" +m_LastHeightmap16.Length);
+                //Debug.Log("6-lhm15bytes:" +m_LastHeightmap16.Length);
                 Singleton<TerrainManager>.instance.SetHeightMap16(m_LastHeightmap16);
-                Debug.Log("7-done");
+                //Debug.Log("7-done");
                 //SimulationManager.instance.AddAction(LoadHeightMap16(m_LastHeightmap16));
             }
             catch (Exception ex)
             {
-                errorLabel.text = ex.ToString();
+                //errorLabel.text = ex.ToString();
             }
         }
 
+        // toggles highways Checkbox
         private void highwaysCheck_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
             highways = !highways;
             highwaysCheck.text = highways.ToString();
         }
 
+        // toggles roads Checkbox
         private void roadsCheck_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
             roads = !roads;
             roadsCheck.text = roads.ToString();
         }
 
+        // toggles pedestrians Checkbox
         private void pedestriansCheck_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
             peds = !peds;
             pedestriansCheck.text = peds.ToString();
         }
 
+
+public bool MyRemoteCertificateValidationCallback(System.Object sender,
+    X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+{
+    bool isOk = true;
+    // If there are errors in the certificate chain,
+    // look at each error to determine the cause.
+    if (sslPolicyErrors != SslPolicyErrors.None) {
+        for (int i=0; i<chain.ChainStatus.Length; i++) {
+            if (chain.ChainStatus[i].Status == X509ChainStatusFlags.RevocationStatusUnknown) {
+                continue;
+            }
+            chain.ChainPolicy.RevocationFlag = X509RevocationFlag.EntireChain;
+            chain.ChainPolicy.RevocationMode = X509RevocationMode.Online;
+            chain.ChainPolicy.UrlRetrievalTimeout = new TimeSpan (0, 1, 0);
+            chain.ChainPolicy.VerificationFlags = X509VerificationFlags.AllFlags;
+            bool chainIsValid = chain.Build ((X509Certificate2)certificate);
+            if (!chainIsValid) {
+                isOk = false;
+                break;
+            }
+        }
+    }
+    return isOk;
+}
         private void loadAPIButton_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
+            ServicePointManager.ServerCertificateValidationCallback = MyRemoteCertificateValidationCallback;
             try
             {
                 ob = GetBounds();
 
-                var streetMapRequest = new OpenStreeMapFrRequest(ob);
+                //var streetMapRequest = new OpenStreeMapFrRequest(ob);
+                //var streetMapRequest = new OpenStreeMapApi0_6Request(ob);
+                var streetMapRequest = new OverpassRequest(ob);
 
                 DebugOutputPanel.AddMessage(PluginManager.MessageType.Message, streetMapRequest.NodeRequestUrl);
                 DebugOutputPanel.AddMessage(PluginManager.MessageType.Message, streetMapRequest.WaysRequestUrl);
 
                 var nodesWebClient = new WebClient();
                 nodesWebClient.DownloadDataCompleted += NodesWebClientCallback;
+                Debug.Log("NodeRequestUrl:" + streetMapRequest.NodeRequestUrl);
                 nodesWebClient.DownloadDataAsync(new Uri(streetMapRequest.NodeRequestUrl));
 
                 var waysWebClient = new WebClient();
+                Debug.Log("WaysRequestUrl:" + streetMapRequest.WaysRequestUrl);
                 waysWebClient.DownloadDataCompleted += WaysWebClientCallback;
                 waysWebClient.DownloadDataAsync(new Uri(streetMapRequest.WaysRequestUrl));
             }
@@ -354,6 +428,7 @@ namespace Mapper
         private void NodesWebClientCallback(object sender, DownloadDataCompletedEventArgs e)
         {
             nodesXml = e.Result;
+            Debug.Log("NodesWebClientCallback e.Error:" + e.Error);
             var msg = "Node Data Loaded";
             if (nodesXml!=null)
             {
@@ -366,7 +441,7 @@ namespace Mapper
             errorLabel.text = msg;
 			nodesLoaded = true;
 			if (nodesLoaded && waysLoaded) { 
-				okButton.Enable();
+				makeRoadsButton.Enable();
 			}
         }
 
@@ -377,7 +452,7 @@ namespace Mapper
 			waysLoaded = true;
 			if (nodesLoaded && waysLoaded)
 			{
-				okButton.Enable();
+				makeRoadsButton.Enable();
 			}
         }
 
@@ -437,7 +512,9 @@ namespace Mapper
             return ob;
         }
 
-        private void loadMapButton_eventClick(UIComponent component, UIMouseEventParameter eventParam)
+        // Called when Load OSM file button is clicked
+        //  -   Disables loadMapButton and LoadAPIButton so they do not work anymore!!!!
+        private void loadOsmFromFileButton_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
             var ob = GetBounds();
 
@@ -448,7 +525,7 @@ namespace Mapper
                 path += ".osm";
                 if (!File.Exists(path))
                 {
-                    errorLabel.text = "Cannot find osm file: " + path;
+                    //errorLabel.text = "Cannot find osm file: " + path;
                     return;
                 }
             }
@@ -459,41 +536,41 @@ namespace Mapper
                     double.Parse(tiles.text.Trim()));
                 currentIndex = 0;
                 roadMaker = new RoadMaker2(osm);
-                errorLabel.text = "File Loaded.";
-                okButton.Enable();
-                loadMapButton.Disable();
+                //errorLabel.text = "File Loaded.";
+                makeRoadsButton.Enable();
+                loadOsmFromFile.Disable();
                 loadAPIButton.Disable();
             }
             catch (Exception ex)
             {
-                errorLabel.text = ex.ToString();
+                //errorLabel.text = ex.ToString();
             }
         }
 
-        private void SetButton(UIButton okButton, string p1, int x, int y)
+        private void SetButton(UIButton makeRoadsButton, string p1, int x, int y)
         {
-            okButton.text = p1;
-            okButton.normalBgSprite = "ButtonMenu";
-            okButton.hoveredBgSprite = "ButtonMenuHovered";
-            okButton.disabledBgSprite = "ButtonMenuDisabled";
-            okButton.focusedBgSprite = "ButtonMenuFocused";
-            okButton.pressedBgSprite = "ButtonMenuPressed";
-            okButton.size = new Vector2(50, 18);
-            okButton.relativePosition = new Vector3(x, y - 3);
-            okButton.textScale = 0.8f;
+            makeRoadsButton.text = p1;
+            makeRoadsButton.normalBgSprite = "ButtonMenu";
+            makeRoadsButton.hoveredBgSprite = "ButtonMenuHovered";
+            makeRoadsButton.disabledBgSprite = "ButtonMenuDisabled";
+            makeRoadsButton.focusedBgSprite = "ButtonMenuFocused";
+            makeRoadsButton.pressedBgSprite = "ButtonMenuPressed";
+            makeRoadsButton.size = new Vector2(50, 18);
+            makeRoadsButton.relativePosition = new Vector3(x, y - 3);
+            makeRoadsButton.textScale = 0.8f;
         }
 
-        private void SetButton(UIButton okButton, string p1, int y)
+        private void SetButton(UIButton button, string p1, int y)
         {
-            okButton.text = p1;
-            okButton.normalBgSprite = "ButtonMenu";
-            okButton.hoveredBgSprite = "ButtonMenuHovered";
-            okButton.disabledBgSprite = "ButtonMenuDisabled";
-            okButton.focusedBgSprite = "ButtonMenuFocused";
-            okButton.pressedBgSprite = "ButtonMenuPressed";
-            okButton.size = new Vector2(260, 24);
-            okButton.relativePosition = new Vector3((int) (width - okButton.size.x) / 2, y);
-            okButton.textScale = 0.8f;
+            button.text = p1;
+            button.normalBgSprite = "ButtonMenu";
+            button.hoveredBgSprite = "ButtonMenuHovered";
+            button.disabledBgSprite = "ButtonMenuDisabled";
+            button.focusedBgSprite = "ButtonMenuFocused";
+            button.pressedBgSprite = "ButtonMenuPressed";
+            button.size = new Vector2(260, 24);
+            button.relativePosition = new Vector3((int) (width - button.size.x) / 2, y);
+            button.textScale = 0.8f;
         }
 
         private void SetCheckBox(UICustomCheckbox3 pedestriansCheck, int x, int y)
@@ -541,49 +618,74 @@ namespace Mapper
             pedestrianLabel.size = new Vector3(120, 20);
         }
 
-        private void okButton_eventClick(UIComponent component, UIMouseEventParameter eventParam)
+        private void makeRoadsButton_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
-            var scale = double.Parse(scaleTextBox.text.Trim());
-            var tt = double.Parse(tiles.text.Trim());
-            var osm = new OSMInterface(ob, nodesXml, waysXml, scale, double.Parse(tolerance.text.Trim()),double.Parse(curveTolerance.text.Trim()), tt);
+            //var scale = double.Parse(scaleTextBox.text.Trim());
+            //var tt = double.Parse(tiles.text.Trim());
+            //var osm = new OSMInterface(ob, nodesXml, waysXml, scale, double.Parse(tolerance.text.Trim()),double.Parse(curveTolerance.text.Trim()), tt);
+            Debug.Log("MakeRoads Button eventClick");
             currentIndex = 0;
-            roadMaker = new RoadMaker2(osm);
-            loadMapButton.Disable();
+            //roadMaker = new RoadMaker2(osm);
+            loadOsmFromFile.Disable();
             loadAPIButton.Disable();
 
+            Debug.Log("Before if");
             if (roadMaker != null)
             {
                 createRoads = !createRoads;
             }
+            createRoads = true;
+            var pp = peds;
+            var rr = roads;
+            var hh = highways;
+            Debug.Log("Before Make1");
+            roadMaker.Make(1, pp, rr, hh);
+            roadMaker.Make(2, pp, rr, hh);
+            roadMaker.Make(3, pp, rr, hh);
         }
 
         public override void Update()
         {
+            makeRoadsButton.Enable();
             if (createRoads)
             {
+                Debug.Log("Creating Roads");
                 var pp = peds;
                 var rr = roads;
                 var hh = highways;
                 if (currentIndex < roadMaker.osm.ways.Count())
                 {
+                    //Debug.Log("AddAction 1");
                     SimulationManager.instance.AddAction(roadMaker.Make(currentIndex, pp, rr, hh));
                     currentIndex += 1;
                 }
 
                 if (currentIndex < roadMaker.osm.ways.Count())
                 {
+                    //Debug.Log("AddAction 2");
                     SimulationManager.instance.AddAction(roadMaker.Make(currentIndex, pp, rr, hh));
                     currentIndex += 1;
                 }
 
                 if (currentIndex < roadMaker.osm.ways.Count())
                 {
+                    //Debug.Log("AddAction 3");
                     SimulationManager.instance.AddAction(roadMaker.Make(currentIndex, pp, rr, hh));
                     currentIndex += 1;
                     var instance = Singleton<NetManager>.instance;
-                    errorLabel.text = String.Format("Making road {0} out of {1}. Nodes: {2}. Segments: {3}",
+                    infoLabel.text = String.Format("Making road {0} out of {1}. Nodes: {2}. Segments: {3}",
                         currentIndex, roadMaker.osm.ways.Count(), instance.m_nodeCount, instance.m_segmentCount);
                 }
+            }
+
+            nodesXmlInfoLabel.text = "nodesXml:"+ (nodesXml==null?"null":nodesXml.Length.ToString());
+            waysXmlInfoLabel.text = "waysXml:" + (waysXml == null ? "null" : waysXml.Length.ToString());
+            lastHeightMap16InfoLabel.text = "m_lastHeightmap16:" + (m_LastHeightmap16 == null ? "null" : m_LastHeightmap16.Length.ToString());
+            roadMakerInfoLabel.text = "roadMaker:" + (roadMaker == null ? "null" : roadMaker.ToString());
+            if (roadMaker!=null)
+            {
+                var osm = roadMaker.osm;
+                osmInfoLabel.text = "osmMaker:" + (osm == null ? "null" : " n:"+osm.nodes.Count.ToString()+ " w:"+osm.ways.Count.ToString());
             }
 
             if (roadMaker != null && currentIndex == roadMaker.osm.ways.Count())

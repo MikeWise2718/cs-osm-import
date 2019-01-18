@@ -38,10 +38,11 @@ namespace Mapper
         }
 
 
+ 
         public IEnumerator Make(int p, bool shouldMakePedestrian, bool shouldMakeRoad, bool shouldMakeHighway)
         {
+            //Debug.Log("Make:" + p + " - 1 ");
             var nm = Singleton<NetManager>.instance;
-
             if (!nm.CheckLimits())
             {
                 yield return null;
@@ -50,30 +51,35 @@ namespace Mapper
             NetInfo gameRoad = null;
 
             // --------------------------- Validation logic ---------------------------------------------------------------------------------------------------
+            //Debug.Log("Make:" + p + " - 2 ");
 
             // Don't make roads the don't map onto a specific type.
             if (osmMappedRoad.roadTypes == RoadTypes.None)
             {
                 yield break;
             }
+            //Debug.Log("Make:" + p + " - 3 ");
 
             // Don't make pedestrian ways if option is not selected.
-            if (!shouldMakePedestrian && ((int) osmMappedRoad.roadTypes <= (int) RoadTypes.PedestrianElevated))
+            if (!shouldMakePedestrian && ((int)osmMappedRoad.roadTypes <= (int)RoadTypes.PedestrianElevated))
             {
                 yield break;
             }
+            //Debug.Log("Make:" + p + " - 4 ");
 
             // Don't make roads if option is not selected.
-            if (!shouldMakeRoad && (int) osmMappedRoad.roadTypes > (int) RoadTypes.PedestrianElevated && (int) osmMappedRoad.roadTypes < (int) RoadTypes.TrainTrack)
+            if (!shouldMakeRoad && (int)osmMappedRoad.roadTypes > (int)RoadTypes.PedestrianElevated && (int)osmMappedRoad.roadTypes < (int)RoadTypes.TrainTrack)
             {
                 yield break;
             }
+            //Debug.Log("Make:" + p + " - 5 ");
 
             // Don't make highways if option is not selected.
-            if (!shouldMakeHighway && (int) osmMappedRoad.roadTypes >= (int) RoadTypes.TrainTrack)
+            if (!shouldMakeHighway && (int)osmMappedRoad.roadTypes >= (int)RoadTypes.TrainTrack)
             {
                 yield break;
             }
+            //Debug.Log("Make:" + p + " - 6 ");
 
             // ------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -87,6 +93,8 @@ namespace Mapper
                 Debug.Log("Failed to find net info: " + osmMappedRoad.roadTypes);
                 yield return null;
             }
+            //Debug.Log("Make:" + p + " - 7 ");
+
 
             float osmMappedRoadElevation = osmMappedRoad.layer;
             if (osmMappedRoadElevation < 0)
@@ -102,12 +110,15 @@ namespace Mapper
                 var errors = default(ToolBase.ToolErrors);
                 gameRoad = gameRoad.m_netAI.GetInfo(osmMappedRoadElevation, osmMappedRoadElevation, 5f, false, false, false, false, ref errors);
             }
+            //Debug.Log("Make:" + p + " - 8 ");
+
 
             if (!osm.nodes.ContainsKey(osmMappedRoad.startNode.ToString()) || !osm.nodes.ContainsKey(osmMappedRoad.endNode.ToString()))
             {
                 // Return if this way's start and end nodes are not contained in the osm nodes data.
                 yield return null;
             }
+            //Debug.Log("Make:" + p + " - 9 ");
 
 
             ushort startNode;
@@ -124,6 +135,8 @@ namespace Mapper
                 AdjustElevation(startNode, osmMappedRoadElevation);
                 nodeMap.Add(osmMappedRoad.startNode, startNode);
             }
+            //Debug.Log("Make:" + p + " - 10 ");
+
 
             ushort endNode;
             if (nodeMap.ContainsKey(osmMappedRoad.endNode))
@@ -139,10 +152,13 @@ namespace Mapper
                 AdjustElevation(endNode, osmMappedRoadElevation);
                 nodeMap.Add(osmMappedRoad.endNode, endNode);
             }
+            //Debug.Log("Make:" + p + " - 11 ");
+
 
             var currentStartNode = startNode;
             for (var i = 0; i < osmMappedRoad.segments.Count(); i += 1)
             {
+                //Debug.Log("Makeseg:" + p + " - 12 " + i);
                 var segment = osmMappedRoad.segments[i];
                 ushort currentEndNode;
                 if (i == osmMappedRoad.segments.Count() - 1)

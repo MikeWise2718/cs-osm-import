@@ -20,6 +20,8 @@ namespace Mapper.OSM
         double tolerance = 10;
         double curveError = 5;
 
+
+        // not used oddly enough
         public OSMInterface(osmBounds bounds, double scale, double tolerance, double curveTolerance, double tiles, string nodesRequestUrl, string waysRequestUrl)
         {
             this.tolerance = tolerance;
@@ -47,6 +49,7 @@ namespace Mapper.OSM
             Init(nodesOsm, scale);
         }
 
+        // used by load osm file
         public OSMInterface(osmBounds bounds, string path, double scale, double tolerance, double curveTolerance, double tiles)
         {
             this.tolerance = tolerance;
@@ -68,6 +71,7 @@ namespace Mapper.OSM
             }
         }
 
+        // used when makeroads is clicked (!)
         public OSMInterface(osmBounds bounds, byte[] nodesXml, byte[] waysXml, double scale, double tolerance, double curveTolerance, double tiles)
         {
             this.tolerance = tolerance;
@@ -91,6 +95,8 @@ namespace Mapper.OSM
 			Init(nodesOsm, scale);
         }
 
+
+        // fills dictionary of osm nodes
         private void Init(OsmDataResponse osmDataResponse, double scale)
         {
             Mapping.InitBoundingBox(osmDataResponse.bounds, scale);
