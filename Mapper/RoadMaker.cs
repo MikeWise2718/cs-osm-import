@@ -107,11 +107,12 @@ namespace Mapper
                 // Adjust the elevation, by what I'm assuming is a factor that normalizes real world height to game engine height.
                 osmMappedRoadElevation *= 11f;
 
+
                 var errors = default(ToolBase.ToolErrors);
                 gameRoad = gameRoad.m_netAI.GetInfo(osmMappedRoadElevation, osmMappedRoadElevation, 5f, false, false, false, false, ref errors);
             }
             //Debug.Log("Make:" + p + " - 8 ");
-
+            osmMappedRoadElevation += 1f;
 
             if (!osm.nodes.ContainsKey(osmMappedRoad.startNode.ToString()) || !osm.nodes.ContainsKey(osmMappedRoad.endNode.ToString()))
             {

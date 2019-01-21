@@ -54,6 +54,7 @@ namespace Mapper
         UILabel waysXmlInfoLabel;
         UILabel roadMakerInfoLabel;
         UILabel osmInfoLabel;
+        UILabel netInfoLabel;
         UILabel lastHeightMap16InfoLabel;
 
         UIButton makeRoadsButton;
@@ -125,6 +126,7 @@ namespace Mapper
             waysXmlInfoLabel = AddUIComponent<UILabel>();
             roadMakerInfoLabel = AddUIComponent<UILabel>();
             osmInfoLabel = AddUIComponent<UILabel>();
+            netInfoLabel = AddUIComponent<UILabel>();
             lastHeightMap16InfoLabel = AddUIComponent<UILabel>();
 
             errorLabel = AddUIComponent<UILabel>();
@@ -134,6 +136,56 @@ namespace Mapper
             base.Awake();
         }
 
+        private bool gettingErrorText = false;
+        private bool settingErrorText = false;
+        private string newErrorText = "";
+        public void SetErrorText(string newtext)
+        {
+            if (!gettingErrorText)
+            {
+                settingErrorText = true;
+                newErrorText = newtext;
+                settingErrorText = false;
+            }
+        }
+        public string GetErrorText()
+        {
+            string rv = "collision";
+            if (!settingErrorText)
+            {
+                gettingErrorText = true;
+                rv = newErrorText;
+                newErrorText = "";
+                gettingErrorText = false;
+            }
+            return rv;
+        }
+
+
+        private bool gettingInfoText = false;
+        private bool settingInfoText = false;
+        private string newInfoText = "";
+        public void SetInfoText(string newtext)
+        {
+            if (!gettingInfoText)
+            {
+                settingInfoText = true;
+                newInfoText = newtext;
+                settingInfoText = false;
+            }
+        }
+        public string GetInfoText()
+        {
+            string rv = "collision";
+            if (!settingInfoText)
+            {
+                gettingInfoText = true;
+                rv = newInfoText;
+                newInfoText = "";
+                gettingInfoText = false;
+            }
+            return rv;
+        }
         // Controls iniitialized
         public override void Start()
         {
@@ -198,9 +250,9 @@ namespace Mapper
             y += vertPadding + 5;
 
             SetLabel(coordinatesLabel, "Bounding Box", x, y);
-            //SetTextBox(coordinates, "35.949310,34.522050,35.753054,34.360353", x + 120, y);
-            //SetTextBox(coordinates, "-122.2574,47.5688,-122.0170,47.7305", x + 120, y);
-            SetTextBox(coordinates, "-122.1436,47.6317,-122.1208,47.6463", x + 120, y);
+            //SetTextBox(coordinates, "35.949310,34.522050,35.753054,34.360353", x + 120, y); // orig box
+            SetTextBox(coordinates, "-122.2574,47.5688,-122.0170,47.7305", x + 120, y); // big box
+            //SetTextBox(coordinates, "-122.1436,47.6317,-122.1208,47.6463", x + 120, y); // tiny box
             y += vertPadding - 5;
 
             SetButton(loadTerrainParty, "Load From terrain.party", y);
@@ -237,6 +289,10 @@ namespace Mapper
             osmInfoLabel.textScale = 0.6f;
             y += vertPadding/2 + 2;
 
+            SetLabel(netInfoLabel, "netInfoLabel", x, y);
+            netInfoLabel.textScale = 0.6f;
+            y += vertPadding / 2 + 2;
+
 
 
             SetLabel(errorLabel, "No Error", x, y);
@@ -268,12 +324,12 @@ namespace Mapper
                 }
                 var client = new WebClient();
                 client.Headers.Add("user-agent", "Cities Skylines Mapping Mod v1");
-                client.DownloadDataCompleted += client_DownloadDataCompleted;
+                client.DownloadDataCompleted += client_DownloadTerrainDataCompleted;
                 client.DownloadDataAsync(
                     new System.Uri(string.Format(
                         "http://terrain.party/api/export?box={0},{1},{2},{3}&heightmap=merged", endLon, endLat, startLon,
                         startLat)));
-                errorLabel.text = "Downloading map from Terrain.Party...";
+                SetInfoText("Downloading map from Terrain.Party...");
             }
             catch (Exception ex)
             {
@@ -281,71 +337,54 @@ namespace Mapper
             }
         }
 
-        // LoadsHeightMap into C:S - called by client_DownloadDataCompleted
+        // LoadsHeightMap into C:S - called by client_DownloadTerrainDataCompleted
         private IEnumerator LoadHeightMap16(byte[] heightmap)
         {
             bool ok = false;
             try
             {
-                infoLabel.text = "bytes:" + heightmap.Length;
+                SetInfoText("bytes:" + heightmap.Length);
                 Singleton<TerrainManager>.instance.SetHeightMap16(heightmap);
                 ok = true;
             }
             catch (Exception ex)
             {
-                errorLabel.text = ex.ToString();
+                SetErrorText(ex.ToString());
             }
             if (ok)
             {
-                errorLabel.text = "Terrain Loaded";
+                SetErrorText("LoadHeightMap16 succeeded");
             }
             yield return null;
         }
 
         // Checks status of hight mad and calls LoadHeightMap16
-        private void client_DownloadDataCompleted(object sender, DownloadDataCompletedEventArgs e)
+        private void client_DownloadTerrainDataCompleted(object sender, DownloadDataCompletedEventArgs e)
         {
             try
             {
                 var image = new Image(e.Result);
-                //Debug.Log("1-image.w" + image.width + " h:" + image.height);
                 image.Convert(Image.kFormatAlpha16);
-                //Debug.Log("2-image.w" + image.width + " h:" + image.height);
                 if (image.width != 1081 || image.height != 1081)
                 {
                     if (!image.Resize(1081, 1081))
                     {
                         //Debug.Log("3-image.w" + image.width + " h:" + image.height);
-                        errorLabel.text = string.Concat(new object[]
-                        {
-                            "Resize not supported: ",
-                            image.format,
-                            "-",
-                            image.width,
-                            "x",
-                            image.height,
-                            " Expected: ",
-                            1081,
-                            "x",
-                            1081
-                        });
+                        var newtext = "Resize not supported image fmt:"+image.format+" w:"+ image.width+" h:"+image.height;
+                        SetErrorText(newtext);
                         return;
                     }
-                    //Debug.Log("4-image.w" + image.width + " h:" + image.height);
 
                 }
                 m_LastHeightmap16 = image.GetPixels();
-                //Debug.Log("5-image.w" + image.width + " h:" + image.height);
-                //infoLabel.text = "w:" + image.width + " h:" + image.height;
-                //m_LastHeightmap16 = image.GetPixels();
-                //Debug.Log("6-lhm15bytes:" +m_LastHeightmap16.Length);
+                Debug.Log("Setting HeightMap");
                 Singleton<TerrainManager>.instance.SetHeightMap16(m_LastHeightmap16);
-                //Debug.Log("7-done");
+                Debug.Log("HeightMapSet");
                 //SimulationManager.instance.AddAction(LoadHeightMap16(m_LastHeightmap16));
             }
             catch (Exception ex)
             {
-                //errorLabel.text = ex.ToString();
+                SetErrorText(ex.ToString());
             }
         }
 
@@ -400,7 +439,7 @@ public bool MyRemoteCertificateValidationCallback(System.Object sender,
             ServicePointManager.ServerCertificateValidationCallback = MyRemoteCertificateValidationCallback;
             try
             {
-                ob = GetBounds();
+                ob = GetBounds(); // In LoadAPIButton
 
                 //var streetMapRequest = new OpenStreeMapFrRequest(ob);
                 //var streetMapRequest = new OpenStreeMapApi0_6Request(ob);
@@ -438,7 +477,7 @@ public bool MyRemoteCertificateValidationCallback(System.Object sender,
             {
                 msg += " but nodesXml is null";
             }
-            errorLabel.text = msg;
+            SetErrorText(msg);
 			nodesLoaded = true;
 			if (nodesLoaded && waysLoaded) { 
 				makeRoadsButton.Enable();
@@ -467,7 +506,7 @@ public bool MyRemoteCertificateValidationCallback(System.Object sender,
             {
                 if (!decimal.TryParse(split[0], out midLon) || !decimal.TryParse(split[1], out midLat))
                 {
-                    errorLabel.text = "Coordinates must be numbers.";
+                    SetErrorText("Coordinates must be numbers.");
                     return false;
                 }
             }
@@ -476,7 +515,7 @@ public bool MyRemoteCertificateValidationCallback(System.Object sender,
                 if (!decimal.TryParse(split[0], out endLon) || !decimal.TryParse(split[1], out startLat) ||
                     !decimal.TryParse(split[2], out startLon) || !decimal.TryParse(split[3], out endLat))
                 {
-                    errorLabel.text = "Coordinates must be numbers.";
+                    SetErrorText("Coordinates must be numbers.");
                     return false;
                 }
                 midLon = (endLon + startLon) / 2M;
@@ -492,7 +531,7 @@ public bool MyRemoteCertificateValidationCallback(System.Object sender,
             return true;
         }
 
-        private OSM.osmBounds GetBounds()
+        private new OSM.osmBounds GetBounds()
         {
             decimal startLat = 0M;
             decimal startLon = 0M;
@@ -516,7 +555,7 @@ public bool MyRemoteCertificateValidationCallback(System.Object sender,
         //  -   Disables loadMapButton and LoadAPIButton so they do not work anymore!!!!
         private void loadOsmFromFileButton_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
-            var ob = GetBounds();
+            var ob = GetBounds(); // in Load Osm from File
 
 
             var path = pathTextBox.text.Trim();
@@ -538,12 +577,12 @@ public bool MyRemoteCertificateValidationCallback(System.Object sender,
                 roadMaker = new RoadMaker2(osm);
                 //errorLabel.text = "File Loaded.";
                 makeRoadsButton.Enable();
-                loadOsmFromFile.Disable();
-                loadAPIButton.Disable();
+                //loadOsmFromFile.Disable();
+                //loadAPIButton.Disable();
             }
             catch (Exception ex)
             {
-                //errorLabel.text = ex.ToString();
+                SetErrorText( ex.ToString() );
             }
         }
 
@@ -626,14 +665,15 @@ public bool MyRemoteCertificateValidationCallback(System.Object sender,
             Debug.Log("MakeRoads Button eventClick");
             currentIndex = 0;
             //roadMaker = new RoadMaker2(osm);
-            loadOsmFromFile.Disable();
-            loadAPIButton.Disable();
+            //loadOsmFromFile.Disable();
+            //loadAPIButton.Disable();
 
             Debug.Log("Before if");
             if (roadMaker != null)
             {
                 createRoads = !createRoads;
             }
+            SetInfoText("Started Road Creation");
             createRoads = true;
             var pp = peds;
             var rr = roads;
@@ -647,6 +687,7 @@ public bool MyRemoteCertificateValidationCallback(System.Object sender,
         public override void Update()
         {
             makeRoadsButton.Enable();
+            var netman = Singleton<NetManager>.instance;
             if (createRoads)
             {
                 Debug.Log("Creating Roads");
@@ -672,9 +713,8 @@ public bool MyRemoteCertificateValidationCallback(System.Object sender,
                     //Debug.Log("AddAction 3");
                     SimulationManager.instance.AddAction(roadMaker.Make(currentIndex, pp, rr, hh));
                     currentIndex += 1;
-                    var instance = Singleton<NetManager>.instance;
-                    infoLabel.text = String.Format("Making road {0} out of {1}. Nodes: {2}. Segments: {3}",
-                        currentIndex, roadMaker.osm.ways.Count(), instance.m_nodeCount, instance.m_segmentCount);
+                    SetInfoText(String.Format("Making road {0} out of {1}. Nodes: {2}. Segments: {3}",
+                        currentIndex, roadMaker.osm.ways.Count(), netman.m_nodeCount, netman.m_segmentCount));
                 }
             }
 
@@ -690,9 +730,18 @@ public bool MyRemoteCertificateValidationCallback(System.Object sender,
 
             if (roadMaker != null && currentIndex == roadMaker.osm.ways.Count())
             {
-                errorLabel.text = "Done.";
+                SetInfoText( "Done with Road Creation - Roads:"+ roadMaker.osm.ways.Count());
                 createRoads = false;
+                makeRoadsButton.Enable();
             }
+            if (netman!=null)
+            {
+                netInfoLabel.text = "Netman Nodes:"+netman.m_nodeCount + " Segments:"+netman.m_segmentCount;
+            }
+
+            infoLabel.text = GetInfoText();
+            errorLabel.text = GetErrorText();
+
             base.Update();
         }
     }

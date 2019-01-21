@@ -366,6 +366,8 @@ namespace Mapper
 
         public void InitBoundingBox(osmBounds bounds, double scale)
         {
+            Debug.Log("InitBB minlon:" + bounds.minlon + " maxlon:" + bounds.maxlon);
+            Debug.Log("InitBB minlat:" + bounds.minlat + " maxlat:" + bounds.maxlat);
             this.middleLatLon = new Vector2((float) (bounds.minlon + bounds.maxlon) / 2f,
                 (float) (bounds.minlat + bounds.maxlat) / 2f);
             var lat = Deg2rad(this.middleLatLon.y);
